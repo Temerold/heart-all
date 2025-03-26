@@ -26,24 +26,6 @@ logging.basicConfig(
 logger: logging.Logger = logging.getLogger(__name__)
 
 
-def get_track_artist_names(track: dict[str]) -> list[str]:
-    return [track["artists"][i]["name"] for i, _ in enumerate(track["artists"])]
-
-
-def get_track_info_appendix(track: dict[str]) -> str:
-    track_artists: list = get_track_artist_names(track)
-    track_name: str = track["name"]
-    if list(filter(lambda i: i, track_artists)) and list(
-        filter(lambda i: i, track_name)
-    ):
-        return f': {", ".join(track_artists)} - {track_name}'
-    return ""
-
-
-def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
-    return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
-
-
 def get_saveable_tracks(
     spotify_client: Spotify, items: dict[str, Union[str, list, int, None]]
 ) -> Mapping[str, Union[list, int]]:
@@ -78,6 +60,24 @@ def get_saveable_tracks(
         "track_count": track_count,
         "queued_tracks": queued_tracks,
     }
+
+
+def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
+    return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
+
+
+def get_track_artist_names(track: dict[str]) -> list[str]:
+    return [track["artists"][i]["name"] for i, _ in enumerate(track["artists"])]
+
+
+def get_track_info_appendix(track: dict[str]) -> str:
+    track_artists: list = get_track_artist_names(track)
+    track_name: str = track["name"]
+    if list(filter(lambda i: i, track_artists)) and list(
+        filter(lambda i: i, track_name)
+    ):
+        return f': {", ".join(track_artists)} - {track_name}'
+    return ""
 
 
 def save_tracks(
