@@ -38,7 +38,6 @@ def get_saveable_tracks(
             if not (track and "id" in track and track["id"]):
                 continue
             tracks.append(track)
-            queued_tracks += 1
 
             formatted_track_number = get_formatted_track_number(
                 queued_tracks, track_count
@@ -50,7 +49,9 @@ def get_saveable_tracks(
             )
             logging.info(queue_message)
             print(queue_message)
-        if items["next"] and 1 == 2:
+
+            queued_tracks += 1
+        if items["next"]:
             items = spotify_client.next(items)
         else:
             break
@@ -97,7 +98,7 @@ def save_tracks(
     tracks_saved: int = 0
     error_count: int = 0
     track_id: str | None = None
-    for i, track in enumerate(tracks["tracks"], 1):
+    for i, track in enumerate(tracks["tracks"]):
         track_id = track["id"]
         try:
             formatted_track_number = get_formatted_track_number(
@@ -114,7 +115,6 @@ def save_tracks(
                 continue
 
             spotify_client.current_user_saved_tracks_add([track_id])
-            tracks_saved += 1
 
             message = (
                 f"{formatted_track_number} Saved track with ID {track_id}"
@@ -122,12 +122,14 @@ def save_tracks(
             )
             logging.info(message)
             print(message)
-        except SpotifyException as exception:
-            error_count += 1
 
+            tracks_saved += 1
+        except SpotifyException as exception:
             message: str = f"Error saving track with ID {track_id}"
             logging.error("%s:%s", message, exception)
             print(message)
+
+            error_count += 1
 
     return tracks_saved, error_count
 
