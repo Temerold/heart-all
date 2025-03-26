@@ -158,7 +158,6 @@ def main() -> None:
         )
     else:
         print(f"Finished without errors.{appendix}")
-    print()
 
 
 if __name__ == "__main__":
