@@ -87,7 +87,7 @@ def get_track_info_appendix(track: dict[str]) -> str:
     if list(filter(lambda i: i, track_artists)) and list(
         filter(lambda i: i, track_name)
     ):
-        return f': {", ".join(track_artists)} - {track_name}'
+        return f": {", ".join(track_artists)} - {track_name}"
     return ""
 
 
