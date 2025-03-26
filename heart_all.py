@@ -38,6 +38,8 @@ def get_saveable_tracks(
             if not (track and "id" in track and track["id"]):
                 continue
             tracks.append(track)
+            queued_tracks += 1
+
             formatted_track_number = get_formatted_track_number(
                 queued_tracks, track_count
             )
@@ -48,9 +50,7 @@ def get_saveable_tracks(
             )
             logging.info(queue_message)
             print(queue_message)
-
-            queued_tracks += 1
-        if items["next"]:
+        if items["next"] and 1 == 2:
             items = spotify_client.next(items)
         else:
             break
@@ -64,6 +64,17 @@ def get_saveable_tracks(
 
 def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
     return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
+
+
+def get_spotipy_client() -> Spotify:
+    return Spotify(
+        auth_manager=SpotifyOAuth(
+            client_id=config["client_id"],
+            client_secret=config["client_secret"],
+            redirect_uri=config["redirect_uri"],
+            scope=["user-library-read", "user-library-modify"],
+        )
+    )
 
 
 def get_track_artist_names(track: dict[str]) -> list[str]:
@@ -98,46 +109,46 @@ def save_tracks(
                     f"{formatted_track_number} Track with ID {track_id} already saved"
                     f"{track_info_appendix}"
                 )
-                print(message)
                 logging.info(message)
+                print(message)
                 continue
+
             spotify_client.current_user_saved_tracks_add([track_id])
+            tracks_saved += 1
+
             message = (
                 f"{formatted_track_number} Saved track with ID {track_id}"
                 f"{track_info_appendix}"
             )
-            print(message)
             logging.info(message)
-            tracks_saved += 1
-        except SpotifyException as exception:
-            message: str = f"Error saving track with ID {track_id}"
             print(message)
-            logging.error("%s:%s", message, exception)
+        except SpotifyException as exception:
             error_count += 1
+
+            message: str = f"Error saving track with ID {track_id}"
+            logging.error("%s:%s", message, exception)
+            print(message)
 
     return tracks_saved, error_count
 
 
 def main() -> None:
-    auth_manager: SpotifyOAuth = SpotifyOAuth(
-        client_id=config["client_id"],
-        client_secret=config["client_secret"],
-        redirect_uri="https://github.com/Temerold/heart-all/",
-        scope=["user-library-read", "user-library-modify"],
-    )
-    spotify_client: Spotify = Spotify(auth_manager=auth_manager)
+    spotify_client: Spotify = get_spotipy_client()
+
     if not (playlist_id := config["playlist_id"]):
         playlist_id: str = input("ID of playlist to forcibly save: ")
+
     try:
         items: dict = spotify_client.playlist_items(playlist_id)
-    except SpotifyException:
+    except SpotifyException as exception:
         # pylint: disable=line-too-long
-        logging.error(
-            "Playlist ID %s possibly invalid. See "
-            "https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids",
-            playlist_id,
+        message = (
+            f"Playlist ID {playlist_id} possibly invalid. See "
+            "https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids"
         )
         # pylint enable=line-too-long
+        logging.error("%s:%s", message, exception)
+        print(message)
         return
 
     saveable_tracks: Mapping[str, Union[list, int]] = get_saveable_tracks(
@@ -150,11 +161,11 @@ def main() -> None:
     appendix: str = (
         f" Forcibly saved {tracks_saved}/" f"{saveable_tracks["queued_tracks"]} tracks"
     )
-
     if error_count:
+        absolute_log_filename: str = Path(config["log_filename"]).absolute()
         print(
-            f"Finished with {error_count} errors. See logs for more information."
-            + appendix
+            f"Finished with {error_count} errors. See logs for more information: "
+            f"{absolute_log_filename}{appendix}"
         )
     else:
         print(f"Finished without errors.{appendix}")
