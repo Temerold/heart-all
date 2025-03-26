@@ -22,11 +22,8 @@ def load_yaml_file(filepath: Path | str) -> dict[str, str]:
         return yaml.safe_load(file)
 
 
-logging_info_copy = logging.info
-
-
 def logging_info_override(message, terminal_output=True, *args, **kwargs):
-    logging_info_copy(message, *args, **kwargs)
+    logging.getLogger().log(20, message, *args, **kwargs)
     if terminal_output:
         print(message)
 
@@ -38,7 +35,7 @@ logging.basicConfig(
     encoding="utf-8",
     datefmt="%Y-%m-%d %H:%M:%S",
     format="%(asctime)s:%(levelname)s:%(message)s",
-    level=logging.getLevelNamesMapping()[config["log_level"]],
+    level=20,
 )
 logging.info = logging_info_override
 logger: logging.Logger = logging.getLogger(__name__)
@@ -162,6 +159,7 @@ def main() -> None:
         )
         # pylint enable=line-too-long
         logging.error(message, exc_info=exception)
+        print(message)
         return
 
     saveable_tracks: Mapping[str, Union[list, int]] = get_saveable_tracks(
