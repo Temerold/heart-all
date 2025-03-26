@@ -4,7 +4,7 @@
         "88",
         "--skip-magic-trailing-comma"
     ],
-    "cSpell.words": ["levelname", "spotipy"],
+    "cSpell.words": ["dotenv", "levelname", "spotipy"],
     "isort.args": ["--profile", "black"],
     "pylint.args": ["--rc-file=../pylintrc"]
 }

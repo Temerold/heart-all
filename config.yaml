@@ -1,6 +1,3 @@
-client_id:
-client_secret:
-redirect_uri:
 log_filename: logs.log
 log_level: INFO # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
 playlist_id: # Leave blank to input when running script

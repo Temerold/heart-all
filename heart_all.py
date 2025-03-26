@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Union
 
 import yaml
+from dotenv import load_dotenv
 from spotipy import Spotify, SpotifyException
 from spotipy.oauth2 import SpotifyOAuth
 
@@ -15,6 +16,7 @@ def load_yaml_file(filepath: Path | str) -> dict[str, str]:
         return yaml.safe_load(file)
 
 
+load_dotenv(encoding="utf-8")
 config: dict[str, str] = load_yaml_file("config.yaml")
 logging.basicConfig(
     filename=config["log_filename"],
@@ -67,15 +69,10 @@ def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
     return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
 
 
-def get_spotipy_client() -> Spotify:
-    return Spotify(
-        auth_manager=SpotifyOAuth(
-            client_id=config["client_id"],
-            client_secret=config["client_secret"],
-            redirect_uri=config["redirect_uri"],
-            scope=["user-library-read", "user-library-modify"],
-        )
-    )
+def get_spotipy_client_from_environment(
+    scope: list[str] = ["user-library-read", "user-library-modify"]
+) -> Spotify:
+    return Spotify(auth_manager=SpotifyOAuth(scope=scope))
 
 
 def get_track_artist_names(track: dict[str]) -> list[str]:
@@ -135,7 +132,7 @@ def save_tracks(
 
 
 def main() -> None:
-    spotify_client: Spotify = get_spotipy_client()
+    spotify_client: Spotify = get_spotipy_client_from_environment()
 
     if not (playlist_id := config["playlist_id"]):
         playlist_id: str = input("ID of playlist to forcibly save: ")
