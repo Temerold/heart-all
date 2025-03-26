@@ -51,10 +51,10 @@ def get_saveable_tracks(
             print(queue_message)
 
             queued_tracks += 1
-        if items["next"]:
-            items = spotify_client.next(items)
-        else:
+
+        if not items["next"]:
             break
+        items = spotify_client.next(items)
 
     return {
         "tracks": tracks,
