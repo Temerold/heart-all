@@ -1,4 +1,5 @@
 import logging
+import sys
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Union
@@ -9,11 +10,25 @@ from spotipy import Spotify, SpotifyException
 from spotipy.oauth2 import SpotifyOAuth
 
 
+def excepthook(logger, type, value, traceback):
+    logger.error("Uncaught exception", exc_info=(type, value, traceback))
+    sys.__excepthook__(type, value, traceback)
+
+
 def load_yaml_file(filepath: Path | str) -> dict[str, str]:
     script_dir: Path = Path(__file__).parent
     filepath: Path = script_dir / filepath
     with open(filepath, "r", encoding="utf-8") as file:
         return yaml.safe_load(file)
+
+
+logging_info_copy = logging.info
+
+
+def logging_info_override(message, terminal_output=True, *args, **kwargs):
+    logging_info_copy(message, *args, **kwargs)
+    if terminal_output:
+        print(message)
 
 
 load_dotenv(encoding="utf-8")
@@ -25,7 +40,11 @@ logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s",
     level=logging.getLevelNamesMapping()[config["log_level"]],
 )
+logging.info = logging_info_override
 logger: logging.Logger = logging.getLogger(__name__)
+sys.excepthook = lambda type, value, traceback: excepthook(
+    logger, type, value, traceback
+)
 
 
 def get_saveable_tracks(
@@ -50,7 +69,6 @@ def get_saveable_tracks(
                 f"{track_info_appendix}"
             )
             logging.info(queue_message)
-            print(queue_message)
 
             queued_tracks += 1
 
@@ -108,7 +126,6 @@ def save_tracks(
                     f"{track_info_appendix}"
                 )
                 logging.info(message)
-                print(message)
                 continue
 
             spotify_client.current_user_saved_tracks_add([track_id])
@@ -118,13 +135,11 @@ def save_tracks(
                 f"{track_info_appendix}"
             )
             logging.info(message)
-            print(message)
 
             tracks_saved += 1
         except SpotifyException as exception:
             message: str = f"Error saving track with ID {track_id}"
-            logging.error("%s:%s", message, exception)
-            print(message)
+            logging.error(message, exc_info=exception)
 
             error_count += 1
 
@@ -146,8 +161,7 @@ def main() -> None:
             "https://developer.spotify.com/documentation/web-api/concepts/spotify-uris-ids"
         )
         # pylint enable=line-too-long
-        logging.error("%s:%s", message, exception)
-        print(message)
+        logging.error(message, exc_info=exception)
         return
 
     saveable_tracks: Mapping[str, Union[list, int]] = get_saveable_tracks(
@@ -162,12 +176,12 @@ def main() -> None:
     )
     if error_count:
         absolute_log_filename: str = Path(config["log_filename"]).absolute()
-        print(
+        logging.info(
             f"Finished with {error_count} errors. See logs for more information: "
             f"{absolute_log_filename}{appendix}"
         )
     else:
-        print(f"Finished without errors.{appendix}")
+        logging.info(f"Finished without errors.{appendix}")
 
 
 if __name__ == "__main__":
