@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import Union
 
 import yaml
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 from spotipy import Spotify, SpotifyException
+from spotipy.exceptions import SpotifyOauthError
 from spotipy.oauth2 import SpotifyOAuth
 
 
@@ -28,7 +29,7 @@ def logging_info_override(message, terminal_output=True, *args, **kwargs):
         print(message)
 
 
-load_dotenv(encoding="utf-8")
+env_secrets = dotenv_values(".env")
 config: dict[str, str] = load_yaml_file("config.yaml")
 logging.basicConfig(
     filename=config["log_filename"],
@@ -44,8 +45,12 @@ sys.excepthook = lambda type, value, traceback: excepthook(
 )
 
 
+def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
+    return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
+
+
 def get_saveable_tracks(
-    spotify_client: Spotify, items: dict[str, Union[str, list, int, None]]
+    spotipy_client: Spotify, items: dict[str, Union[str, list, int, None]]
 ) -> Mapping[str, Union[list, int]]:
     tracks: list = []
     track_count: int = items["total"]
@@ -71,7 +76,7 @@ def get_saveable_tracks(
 
         if not items["next"]:
             break
-        items = spotify_client.next(items)
+        items = spotipy_client.next(items)
 
     return {
         "tracks": tracks,
@@ -80,14 +85,58 @@ def get_saveable_tracks(
     }
 
 
-def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
-    return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
-
-
-def get_spotipy_client_from_environment(
+def get_spotipy_client(
     scope: list[str] = ["user-library-read", "user-library-modify"]
 ) -> Spotify:
-    return Spotify(auth_manager=SpotifyOAuth(scope=scope))
+    if Path.exists(Path(__file__).parent / ".cache"):
+        auth_manager = SpotifyOAuth(
+            client_id=" ", client_secret=" ", redirect_uri=" ", scope=scope
+        )
+        valid, exception = validate_spotipy_client(auth_manager)
+    else:
+        valid: bool = False
+
+    env_vars: dict = get_spotipy_client_env_vars()
+    if not valid:  # `.cache` is either missing or invalid
+        if not env_vars["SPOTIPY_CLIENT_ID"]:
+            env_vars["SPOTIPY_CLIENT_ID"] = input(
+                "Please input Spotify application client ID: "
+            )
+
+        if not env_vars["SPOTIPY_CLIENT_SECRET"]:
+            env_vars["SPOTIPY_CLIENT_SECRET"] = input(
+                "Please input Spotify application client secret: "
+            )
+
+        if not env_vars["SPOTIPY_REDIRECT_URI"]:
+            env_vars["SPOTIPY_REDIRECT_URI"] = input(
+                "Please input Spotify application redirect URI: "
+            )
+
+    auth_manager = SpotifyOAuth(
+        client_id=env_vars["SPOTIPY_CLIENT_ID"] or " ",
+        client_secret=env_vars["SPOTIPY_CLIENT_SECRET"] or " ",
+        redirect_uri=env_vars["SPOTIPY_REDIRECT_URI"] or " ",
+        scope=scope,
+    )
+    valid, exception = validate_spotipy_client(auth_manager)
+    valid: bool
+    exception: Exception | None
+    if not valid:
+        message: str = "Invalid Spotify application credentials."
+        logging.error(message, exc_info=exception)
+        print(message)
+        sys.exit(1)
+
+    return Spotify(auth_manager=auth_manager)
+
+
+def get_spotipy_client_env_vars() -> Spotify:
+    return {
+        "SPOTIPY_CLIENT_ID": env_secrets.get("SPOTIPY_CLIENT_ID"),
+        "SPOTIPY_CLIENT_SECRET": env_secrets.get("SPOTIPY_CLIENT_SECRET"),
+        "SPOTIPY_REDIRECT_URI": env_secrets.get("SPOTIPY_REDIRECT_URI"),
+    }
 
 
 def get_track_artist_names(track: dict[str]) -> list[str]:
@@ -105,7 +154,7 @@ def get_track_info_appendix(track: dict[str]) -> str:
 
 
 def save_tracks(
-    spotify_client: Spotify, tracks: dict[str:list, str:int, str:int]
+    spotipy_client: Spotify, tracks: dict[str:list, str:int, str:int]
 ) -> tuple[int, int]:
     tracks_saved: int = 0
     error_count: int = 0
@@ -117,7 +166,7 @@ def save_tracks(
                 i, len(tracks["tracks"])
             )
             track_info_appendix: str = get_track_info_appendix(track)
-            if spotify_client.current_user_saved_tracks_contains([track_id])[0]:
+            if spotipy_client.current_user_saved_tracks_contains([track_id])[0]:
                 message: str = (
                     f"{formatted_track_number} Track with ID {track_id} already saved"
                     f"{track_info_appendix}"
@@ -125,7 +174,7 @@ def save_tracks(
                 logging.info(message)
                 continue
 
-            spotify_client.current_user_saved_tracks_add([track_id])
+            spotipy_client.current_user_saved_tracks_add([track_id])
 
             message = (
                 f"{formatted_track_number} Saved track with ID {track_id}"
@@ -143,14 +192,28 @@ def save_tracks(
     return tracks_saved, error_count
 
 
+def validate_spotipy_client(
+    auth_manager: SpotifyOAuth,
+) -> tuple[bool, Union[Exception, None]]:
+    try:
+        Spotify(auth_manager=auth_manager).current_user()
+        return True, None
+    except SpotifyOauthError as exception:
+        return False, exception
+
+
 def main() -> None:
-    spotify_client: Spotify = get_spotipy_client_from_environment()
+    spotipy_client: Spotify = get_spotipy_client()
+    logging.info(
+        f"Successfully authenticated with Spotify as user "
+        f"{spotipy_client.current_user()["display_name"]}"
+    )
 
     if not (playlist_id := config["playlist_id"]):
-        playlist_id: str = input("ID of playlist to forcibly save: ")
+        playlist_id: str = input("Please input ID of playlist to forcibly save: ")
 
     try:
-        items: dict = spotify_client.playlist_items(playlist_id)
+        items: dict = spotipy_client.playlist_items(playlist_id)
     except SpotifyException as exception:
         # pylint: disable=line-too-long
         message = (
@@ -163,9 +226,9 @@ def main() -> None:
         return
 
     saveable_tracks: Mapping[str, Union[list, int]] = get_saveable_tracks(
-        spotify_client, items
+        spotipy_client, items
     )
-    tracks_saved, error_count = save_tracks(spotify_client, saveable_tracks)
+    tracks_saved, error_count = save_tracks(spotipy_client, saveable_tracks)
     tracks_saved: int
     error_count: int
 
