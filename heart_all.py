@@ -30,7 +30,17 @@ def logging_info_override(message, terminal_output=True, *args, **kwargs):
 
 
 env_secrets = dotenv_values(".env")
-config: dict[str, str] = load_yaml_file("config.yaml")
+config_files = ["config.yaml", "config.yml"]
+config: None = None
+for file in config_files:
+    if Path.exists(Path(__file__).parent / file):
+        config: dict[str, str] = load_yaml_file(file)
+if not config:
+    raise FileNotFoundError(
+        f"Config file not found. Expected one of the following: "
+        f"{", ".join(config_files)}"
+    )
+
 logging.basicConfig(
     filename=config["log_filename"],
     encoding="utf-8",
