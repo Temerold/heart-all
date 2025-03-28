@@ -62,9 +62,10 @@ def get_saveable_tracks(
     }
 
 
-def get_spotipy_client(
-    scope: list[str] = ["user-library-read", "user-library-modify"]
-) -> Spotify:
+def get_spotipy_client(scope: list[str] = None) -> Spotify:
+    if scope is None:
+        scope = ["user-library-read", "user-library-modify"]
+
     if Path.exists(Path(__file__).parent / ".cache"):
         auth_manager = SpotifyOAuth(
             client_id=" ", client_secret=" ", redirect_uri=" ", scope=scope
