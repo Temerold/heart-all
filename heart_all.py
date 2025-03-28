@@ -2,6 +2,7 @@ import logging
 import sys
 from collections.abc import Mapping
 from pathlib import Path
+from types import TracebackType
 from typing import Union
 
 import yaml
@@ -11,9 +12,14 @@ from spotipy.exceptions import SpotifyOauthError
 from spotipy.oauth2 import SpotifyOAuth
 
 
-def excepthook(logger, type, value, traceback):
-    logger.error("Uncaught exception", exc_info=(type, value, traceback))
-    sys.__excepthook__(type, value, traceback)
+def excepthook(
+    logger: logging.Logger,
+    exc_type: type[BaseException],
+    exc_value: BaseException,
+    exc_traceback: TracebackType | None,
+) -> None:
+    logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+    sys.__excepthook__(type, exc_value, exc_traceback)
 
 
 def load_yaml_file(filepath: Path | str) -> dict[str, str]:
