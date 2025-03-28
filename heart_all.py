@@ -29,7 +29,9 @@ def load_yaml_file(filepath: Path | str) -> dict[str, str]:
         return yaml.safe_load(file)
 
 
-def logging_info_override(message, terminal_output=True, *args, **kwargs):
+def logging_info_override(
+    message: str, terminal_output: bool = True, *args, **kwargs
+) -> None:
     logging.getLogger().log(20, message, *args, **kwargs)
     if terminal_output:
         print(message)
