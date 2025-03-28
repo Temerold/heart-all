@@ -22,47 +22,6 @@ def excepthook(
     sys.__excepthook__(type, exc_value, exc_traceback)
 
 
-def load_yaml_file(filepath: Path | str) -> dict[str, str]:
-    script_dir: Path = Path(__file__).parent
-    filepath: Path = script_dir / filepath
-    with open(filepath, "r", encoding="utf-8") as file:
-        return yaml.safe_load(file)
-
-
-def logging_info_override(
-    message: str, *args, terminal_output: bool = True, **kwargs
-) -> None:
-    logging.getLogger().log(20, message, *args, **kwargs)
-    if terminal_output:
-        print(message)
-
-
-env_secrets: dict = dotenv_values(".env")
-config_files: list = ["config.yaml", "config.yml"]
-config: None = None
-for file in config_files:
-    if Path.exists(Path(__file__).parent / file):
-        config: dict[str, str] = load_yaml_file(file)
-if not config:
-    raise FileNotFoundError(
-        f"Config file not found. Expected one of the following: "
-        f"{", ".join(config_files)}"
-    )
-
-logging.basicConfig(
-    filename=config["log_filename"],
-    encoding="utf-8",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    format="%(asctime)s:%(levelname)s:%(message)s",
-    level=20,
-)
-logging.info = logging_info_override
-logger: logging.Logger = logging.getLogger(__name__)
-sys.excepthook = lambda type, value, traceback: excepthook(
-    logger, type, value, traceback
-)
-
-
 def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
     return f"{str((queued_tracks + 1)).rjust(len(str(track_count)))}/{track_count}"
 
@@ -171,6 +130,50 @@ def get_track_info_appendix(track: dict[str]) -> str:
     return ""
 
 
+def load_config_and_environment() -> None:
+    global env_secrets, config
+
+    env_secrets: dict = dotenv_values(".env")
+    config: dict[str, str] = None
+    for file in (recognized_config_files := ["config.yaml", "config.yml"]):
+        if Path.exists(Path(__file__).parent / file):
+            config = load_yaml_file(file)
+
+    if not config:
+        raise FileNotFoundError(
+            f"Config file not found. Expected one of the following: "
+            f"{", ".join(recognized_config_files)}"
+        )
+
+    logging.basicConfig(
+        filename=config["log_filename"],
+        encoding="utf-8",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        format="%(asctime)s:%(levelname)s:%(message)s",
+        level=20,
+    )
+    logging.info = logging_info_override
+    logger: logging.Logger = logging.getLogger(__name__)
+    sys.excepthook = lambda type, value, traceback: excepthook(
+        logger, type, value, traceback
+    )
+
+
+def load_yaml_file(filepath: Path | str) -> dict[str, str]:
+    script_dir: Path = Path(__file__).parent
+    filepath: Path = script_dir / filepath
+    with open(filepath, "r", encoding="utf-8") as file:
+        return yaml.safe_load(file)
+
+
+def logging_info_override(
+    message: str, *args, terminal_output: bool = True, **kwargs
+) -> None:
+    logging.getLogger().log(20, message, *args, **kwargs)
+    if terminal_output:
+        print(message)
+
+
 def save_tracks(
     spotipy_client: Spotify, tracks: dict[str:list, str:int, str:int]
 ) -> tuple[int, int]:
@@ -264,4 +267,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    env_secrets: dict
+    config: dict
+    load_config_and_environment()
     main()
