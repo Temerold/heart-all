@@ -29,8 +29,8 @@ def logging_info_override(message, terminal_output=True, *args, **kwargs):
         print(message)
 
 
-env_secrets = dotenv_values(".env")
-config_files = ["config.yaml", "config.yml"]
+env_secrets: dict = dotenv_values(".env")
+config_files: list = ["config.yaml", "config.yml"]
 config: None = None
 for file in config_files:
     if Path.exists(Path(__file__).parent / file):
