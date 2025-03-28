@@ -1,3 +1,11 @@
+"""
+This script interacts with the Spotify API to forcibly save tracks from a playlist to
+the user's library.
+
+Its canonical open-source location is:
+https://github.com/Temerold/heart-all/blob/main/heart_all.py
+"""
+
 import logging
 import sys
 from collections.abc import Mapping
