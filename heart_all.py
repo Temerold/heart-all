@@ -227,8 +227,8 @@ def validate_spotipy_client(
 def main() -> None:
     spotipy_client: Spotify = get_spotipy_client()
     logging.info(
-        f"Successfully authenticated with Spotify as user "
-        f"{spotipy_client.current_user()["display_name"]}"
+        "Successfully authenticated with Spotify as user %s",
+        spotipy_client.current_user()["display_name"],
     )
 
     if not (playlist_id := config["playlist_id"]):
@@ -260,11 +260,13 @@ def main() -> None:
     if error_count:
         absolute_log_filename: str = Path(config["log_filename"]).absolute()
         logging.info(
-            f"Finished with {error_count} errors. See logs for more information: "
-            f"{absolute_log_filename}{appendix}"
+            "Finished with %d errors. See logs for more information: %s%s",
+            error_count,
+            absolute_log_filename,
+            appendix,
         )
     else:
-        logging.info(f"Finished without errors.{appendix}")
+        logging.info("Finished without errors.%s", appendix)
 
 
 if __name__ == "__main__":
