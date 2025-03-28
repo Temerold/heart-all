@@ -30,7 +30,7 @@ def load_yaml_file(filepath: Path | str) -> dict[str, str]:
 
 
 def logging_info_override(
-    message: str, terminal_output: bool = True, *args, **kwargs
+    message: str, *args, terminal_output: bool = True, **kwargs
 ) -> None:
     logging.getLogger().log(20, message, *args, **kwargs)
     if terminal_output:
