@@ -138,7 +138,7 @@ def get_track_info_appendix(track: dict[str]) -> str:
     return ""
 
 
-def load_config_and_environment() -> None:
+def load_environment_and_config() -> None:
     global env_secrets, config
 
     env_secrets = dotenv_values(".env")
@@ -279,5 +279,5 @@ def main() -> None:
 if __name__ == "__main__":
     env_secrets: dict
     config: dict
-    load_config_and_environment()
+    load_environment_and_config()
     main()
