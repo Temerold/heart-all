@@ -1,5 +1,5 @@
 # heart-all
-A simple script to forcibly save all Spotify tracks in a playlist to your library.
+A simple script to save all tracks in a Spotify playlist to your library.
 
 ## Usage
 1. Create a Spotify application at [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/applications)
