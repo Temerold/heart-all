@@ -41,8 +41,8 @@ def get_saveable_tracks(
     queued_tracks: int = 0
     while items:
         for item in items["items"]:
-            track: dict | None = item["track"]
-            if not (track and "id" in track and track["id"]):
+            track: dict | None = getattr(item, "track")
+            if track is None or getattr(track, "id") is None:
                 continue
             tracks.append(track)
 
