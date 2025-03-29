@@ -36,7 +36,7 @@ def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
 def get_saveable_tracks(
     spotipy_client: Spotify, items: dict[str, Union[str, list, int, None]]
 ) -> Mapping[str, Union[list, int]]:
-    tracks: list = []
+    tracks: list[dict] = []
     track_count: int = items["total"]
     queued_tracks: int = 0
     while items:
@@ -129,7 +129,7 @@ def get_track_artist_names(track: dict[str]) -> list[str]:
 
 
 def get_track_info_appendix(track: dict[str]) -> str:
-    track_artists: list = get_track_artist_names(track)
+    track_artists: list[str] = get_track_artist_names(track)
     track_name: str = track["name"]
     if list(filter(lambda i: i, track_artists)) and list(
         filter(lambda i: i, track_name)
