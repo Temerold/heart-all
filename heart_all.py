@@ -179,8 +179,7 @@ def logging_info_override(
 ) -> None:
     logging.getLogger().log(20, message, *args, **kwargs)
     if terminal_output:
-        formatted_message = message % args if args else message
-        print(formatted_message)
+        print(message % args if args else message)
 
 
 def save_tracks(
