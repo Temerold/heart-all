@@ -141,8 +141,8 @@ def get_track_info_appendix(track: dict[str]) -> str:
 def load_config_and_environment() -> None:
     global env_secrets, config
 
-    env_secrets: dict = dotenv_values(".env")
-    config: dict[str, str] = None
+    env_secrets = dotenv_values(".env")
+    config = None
     for file in (recognized_config_files := ["config.yaml", "config.yml"]):
         if Path.exists(Path(__file__).parent / file):
             config = load_yaml_file(file)
