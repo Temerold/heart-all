@@ -12,7 +12,7 @@ A simple script to save all tracks in a Spotify playlist to your library.
 ### Configuration
 You can configure the script by editing the `config.yaml` file. The following options are available:
 - `log_filename`: The name of the log file
-- `playlist_id`: The ID of the playlist you want to save (Optional)
+- `playlist_id`: The ID of the playlist you want to save (optional)
 
 ## Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
