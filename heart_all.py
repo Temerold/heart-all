@@ -26,7 +26,7 @@ def excepthook(
     exc_traceback: TracebackType | None,
 ) -> None:
     logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
-    sys.__excepthook__(type, exc_value, exc_traceback)
+    sys.__excepthook__(exc_type, exc_value, exc_traceback)
 
 
 def get_formatted_track_number(queued_tracks: int, track_count: int) -> str:
