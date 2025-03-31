@@ -233,6 +233,11 @@ def validate_spotipy_client(
 
 def main() -> None:
     spotipy_client: Spotify = get_spotipy_client()
+    if not spotipy_client.current_user():
+        message = "Failed to authenticate with Spotify."
+        logging.error(message)
+        print(message)
+        return
     logging.info(
         "Successfully authenticated with Spotify as user %s",
         spotipy_client.current_user()["display_name"],
