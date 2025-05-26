@@ -41,7 +41,7 @@ def get_saveable_tracks(
     queued_tracks: int = 0
     while items:
         for item in items["items"]:
-            track: dict | None = item.get("track")
+            track: dict[str, str] | None = item.get("track")
             if track is None or track.get("id") is None:
                 continue
             tracks.append(track)
@@ -81,7 +81,7 @@ def get_spotipy_client(scope: list[str] = None) -> Spotify:
     else:
         valid: bool = False
 
-    env_vars: dict = get_spotipy_client_env_vars()
+    env_vars: dict[str, str | None] = get_spotipy_client_env_vars()
     if not valid:  # `.cache` is either missing or invalid
         if not env_vars["SPOTIPY_CLIENT_ID"]:
             env_vars["SPOTIPY_CLIENT_ID"] = input(
@@ -116,7 +116,7 @@ def get_spotipy_client(scope: list[str] = None) -> Spotify:
     return Spotify(auth_manager=auth_manager)
 
 
-def get_spotipy_client_env_vars() -> Spotify:
+def get_spotipy_client_env_vars() -> dict[str, str | None]:
     return {
         "SPOTIPY_CLIENT_ID": env_secrets.get("SPOTIPY_CLIENT_ID"),
         "SPOTIPY_CLIENT_SECRET": env_secrets.get("SPOTIPY_CLIENT_SECRET"),
@@ -124,11 +124,11 @@ def get_spotipy_client_env_vars() -> Spotify:
     }
 
 
-def get_track_artist_names(track: dict[str]) -> list[str]:
+def get_track_artist_names(track: dict[str, str]) -> list[str]:
     return [track["artists"][i]["name"] for i, _ in enumerate(track["artists"])]
 
 
-def get_track_info_appendix(track: dict[str]) -> str:
+def get_track_info_appendix(track: dict[str, str]) -> str:
     track_artists: list[str] = get_track_artist_names(track)
     track_name: str = track["name"]
     if list(filter(lambda i: i, track_artists)) and list(
@@ -183,7 +183,7 @@ def logging_info_override(
 
 
 def save_tracks(
-    spotipy_client: Spotify, tracks: dict[str:list, str:int, str:int]
+    spotipy_client: Spotify, tracks: dict[str, list | int]
 ) -> tuple[int, int]:
     tracks_saved: int = 0
     error_count: int = 0
@@ -247,7 +247,9 @@ def main() -> None:
         playlist_id: str = input("Please input ID of playlist to forcibly save: ")
 
     try:
-        items: dict = spotipy_client.playlist_items(playlist_id)
+        items: dict[str, Union[str, list, int, None]] = spotipy_client.playlist_items(
+            playlist_id
+        )
     except SpotifyException as exception:
         # pylint: disable=line-too-long
         message = (
@@ -270,7 +272,7 @@ def main() -> None:
         f" Forcibly saved {tracks_saved}/" f"{saveable_tracks["queued_tracks"]} tracks"
     )
     if error_count:
-        absolute_log_filename: str = Path(config["log_filename"]).absolute()
+        absolute_log_filename: Path = Path(config["log_filename"]).absolute()
         logging.info(
             "Finished with %d errors. See logs for more information: %s%s",
             error_count,
@@ -282,7 +284,7 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    env_secrets: dict
+    env_secrets: dict[str, str | None]
     config: dict
     load_environment_and_config()
     main()
